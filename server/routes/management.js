@@ -398,11 +398,11 @@ router.get('/reports/today', requireAuth, async (req, res) => {
     await ensureTables();
     const { since } = resolveReportWindow({ range: 'today' });
     const [restaurantRows] = await pool.query(
-      'SELECT COALESCE(SUM(total_amount),0) AS sales, COUNT(*) AS items, SUM(CASE WHEN status = "delivered" THEN 1 ELSE 0 END) AS delivered FROM restaurant_sales WHERE sold_at >= ?',
+      'SELECT COALESCE(SUM(total_amount),0) AS sales, COUNT(*) AS items, SUM(CASE WHEN status = \'delivered\' THEN 1 ELSE 0 END) AS delivered FROM restaurant_sales WHERE sold_at >= ?',
       [since]
     );
     const [barRows] = await pool.query(
-      'SELECT COALESCE(SUM(total_amount),0) AS sales, COUNT(*) AS items, SUM(CASE WHEN status = "served" OR status = "paid" THEN 1 ELSE 0 END) AS delivered FROM bar_orders WHERE created_at >= ?',
+      'SELECT COALESCE(SUM(total_amount),0) AS sales, COUNT(*) AS items, SUM(CASE WHEN status = \'served\' OR status = \'paid\' THEN 1 ELSE 0 END) AS delivered FROM bar_orders WHERE created_at >= ?',
       [since]
     );
 
@@ -427,9 +427,9 @@ router.get('/reports/summary', requireAuth, requireManager, async (req, res) => 
   try {
     await ensureTables();
     const { since, until, label } = resolveReportWindow(req.query);
-    const [restaurantRows] = await pool.query('SELECT SUM(total_amount) AS total_sales, COUNT(*) AS total_items, SUM(CASE WHEN status = "delivered" THEN 1 ELSE 0 END) AS delivered_items FROM restaurant_sales WHERE sold_at >= ? AND sold_at < ?', [since, until]);
-    const [barRows] = await pool.query('SELECT SUM(total_amount) AS total_sales, COUNT(*) AS total_items, SUM(CASE WHEN status = "served" OR status = "paid" THEN 1 ELSE 0 END) AS delivered_items FROM bar_orders WHERE created_at >= ? AND created_at < ?', [since, until]);
-    const [bookingRows] = await pool.query('SELECT SUM(total_amount) AS room_revenue, COUNT(*) AS room_bookings FROM bookings WHERE created_at >= ? AND created_at < ? AND status IN ("confirmed", "checked_in", "checked_out")', [since, until]);
+    const [restaurantRows] = await pool.query('SELECT SUM(total_amount) AS total_sales, COUNT(*) AS total_items, SUM(CASE WHEN status = \'delivered\' THEN 1 ELSE 0 END) AS delivered_items FROM restaurant_sales WHERE sold_at >= ? AND sold_at < ?', [since, until]);
+    const [barRows] = await pool.query('SELECT SUM(total_amount) AS total_sales, COUNT(*) AS total_items, SUM(CASE WHEN status = \'served\' OR status = \'paid\' THEN 1 ELSE 0 END) AS delivered_items FROM bar_orders WHERE created_at >= ? AND created_at < ?', [since, until]);
+    const [bookingRows] = await pool.query('SELECT SUM(total_amount) AS room_revenue, COUNT(*) AS room_bookings FROM bookings WHERE created_at >= ? AND created_at < ? AND status IN (\'confirmed\', \'checked_in\', \'checked_out\')', [since, until]);
 
     const restaurant = restaurantRows[0] || {};
     const bar = barRows[0] || {};
