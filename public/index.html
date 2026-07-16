@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.ico">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="theme-color" content="#171B34">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dekyiba">
+<title>Dekyiba Hotel — Rest, Truly</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <nav class="nav">
+    <a href="/" class="brand">Dekyiba <span>Hotel</span></a>
+    <div class="nav-links">
+      <a href="/">Home</a>
+    </div>
+    <div style="display:flex; align-items:center; gap:14px;">
+      <span id="staff-status" style="font-size:0.82rem; opacity:0.85;"></span>
+      <a href="/rooms.html" class="nav-cta">Book a room</a>
+    </div>
+  </nav>
+</header>
+
+<div class="kente-stripe"></div>
+
+<section class="hero">
+  <div class="hero-inner">
+    <p class="eyebrow">Est. Tarkwa, Ghana</p>
+    <h1>Welcome to the Dekyiba service desk.</h1>
+    <p class="lede">Book rooms, record restaurant orders, and log bar sales from one simple place.</p>
+    <a href="/rooms.html" class="btn btn-primary" style="display:inline-block; margin-top:8px;">Check availability &amp; book a room</a>
+  </div>
+</section>
+
+<section id="service-hub">
+  <div class="container">
+    <div class="section-head">
+      <p class="eyebrow">Operations hub</p>
+      <h2>Hotel services</h2>
+      <p>Use the service cards below to manage reservations, take restaurant orders, and record bar sales.</p>
+    </div>
+    <div class="service-grid">
+      <div class="service-card">
+        <h3>Bookings</h3>
+        <p>Reserve a room and check availability for arriving guests.</p>
+        <a href="/rooms.html" class="btn btn-primary" id="jump-rooms">Open room booking</a>
+      </div>
+      <div class="service-card">
+        <h3>Restaurant</h3>
+        <p>Capture orders and record restaurant sales instantly.</p>
+        <button class="btn btn-outline" id="jump-restaurant">Take restaurant orders</button>
+      </div>
+      <div class="service-card">
+        <h3>Bar</h3>
+        <p>Log bar sales and keep the bar ledger updated.</p>
+        <button class="btn btn-outline" id="jump-bar">Record bar sales</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="kente-stripe"></div>
+
+<footer class="site-footer" id="contact">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="brand">Dekyiba <span>Hotel</span></div>
+        <p style="max-width:280px; line-height:1.6; font-size:0.9rem;">Tarkwa, Western Region, Ghana</p>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <p style="font-size:0.9rem; line-height:2;">+233 20 000 0000<br>frontdesk@dekyibahotel.com</p>
+      </div>
+      <div>
+        <h4>Hotel</h4>
+        <p style="font-size:0.9rem; line-height:2;">
+          <a href="/rooms.html">Rooms</a><br>
+          <a href="/admin/login.html">Staff login</a>
+        </p>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>&copy; 2026 Dekyiba Hotel</span>
+      <span>Tarkwa, Ghana</span>
+    </div>
+  </div>
+</footer>
+
+<script src="/js/staff-auth.js"></script>
+<script src="/js/service-hub.js"></script>
+</body>
+</html>

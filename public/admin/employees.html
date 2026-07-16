@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.ico">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="theme-color" content="#171B34">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dekyiba">
+  <title>Employees — Dekyiba Hotel</title>
+  <link rel="stylesheet" href="/admin/css/admin.css" />
+</head>
+<body class="admin">
+  <div class="admin-shell">
+    <aside class="sidebar">
+      <div class="brand">Dekyiba <span style="color:var(--gold);">Hotel</span></div>
+      <nav>
+        <a href="/admin/dashboard.html">Bookings</a>
+        <a href="/admin/settings.html" data-manager-only>Settings</a>
+        <a href="/admin/restaurant.html" data-manager-only>Restaurant</a>
+        <a href="/admin/bar.html" data-manager-only>Bar</a>
+        <a href="/admin/employees.html" class="active" data-manager-only>Employees</a>
+        <a href="/admin/accounts-manager.html" data-manager-only>Accounts Manager</a>
+      </nav>
+      <div class="logout" id="logout-btn">Sign out</div>
+    </aside>
+
+    <main class="main">
+      <div class="main-head">
+        <div>
+          <h2>Employee accounts</h2>
+          <p>Create employee accounts for staff. Employees sign in from the Employee tab on the login page and land on the home page, where they can take restaurant and bar orders.</p>
+        </div>
+      </div>
+
+      <div class="stat-grid" style="grid-template-columns: repeat(2, 1fr);">
+        <div class="stat-card"><div class="label">Total staff accounts</div><div class="value" id="staff-count">—</div></div>
+        <div class="stat-card"><div class="label">Currently checked in</div><div class="value" id="staff-online-count">—</div></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3>Create employee account</h3></div>
+        <div class="panel-body">
+          <form id="admin-form" class="stack-form">
+            <div class="form-row">
+              <div class="field"><label>Full name</label><input type="text" id="admin-name" required /></div>
+              <div class="field"><label>Username</label><input type="text" id="admin-username" required /></div>
+            </div>
+            <div class="form-row">
+              <div class="field"><label>Password</label><input type="password" id="admin-password" required /></div>
+              <div class="field">
+                <label>Role</label>
+                <select id="admin-role">
+                  <option value="employee">Employee</option>
+                  <option value="manager">Manager</option>
+                </select>
+              </div>
+            </div>
+            <button class="btn btn-primary" type="submit">Create account</button>
+            <div id="admin-status" class="status-msg"></div>
+          </form>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:24px;">
+        <div class="panel-head"><h3>Staff accounts</h3></div>
+        <table>
+          <thead><tr><th>Full name</th><th>Username</th><th>Role</th><th>Status</th><th>Last sign-in</th><th>Created</th></tr></thead>
+          <tbody id="admins-body"><tr><td colspan="6" style="text-align:center; color:#7a7560;">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <script src="/admin/js/shared.js"></script>
+  <script src="/admin/js/employees.js"></script>
+</body>
+</html>

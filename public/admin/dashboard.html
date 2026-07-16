@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.ico">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="theme-color" content="#171B34">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dekyiba">
+<title>Dashboard — Dekyiba Hotel</title>
+<link rel="stylesheet" href="/admin/css/admin.css">
+</head>
+<body class="admin">
+
+<div class="admin-shell">
+  <aside class="sidebar">
+    <div class="brand">Dekyiba <span style="color:var(--gold);">Hotel</span></div>
+    <nav>
+      <a href="/admin/dashboard.html" class="active">Bookings</a>
+      <a href="/admin/settings.html" data-manager-only>Settings</a>
+      <a href="/admin/restaurant.html" data-manager-only>Restaurant</a>
+      <a href="/admin/bar.html" data-manager-only>Bar</a>
+      <a href="/admin/employees.html" data-manager-only>Employees</a>
+      <a href="/admin/accounts-manager.html" data-manager-only>Accounts Manager</a>
+    </nav>
+    <div class="logout" id="logout-btn">Sign out</div>
+  </aside>
+
+  <main class="main">
+    <div class="main-head">
+      <div>
+        <h2>Bookings</h2>
+        <p id="welcome-msg">Front desk overview</p>
+      </div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="label">Total rooms</div>
+        <div class="value" id="stat-total">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Occupied now</div>
+        <div class="value" id="stat-occupied">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Pending requests</div>
+        <div class="value" id="stat-pending">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Revenue (this month)</div>
+        <div class="value" id="stat-revenue">—</div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-bottom:24px;">
+      <div class="panel-head">
+        <h3>Add room</h3>
+      </div>
+      <div class="panel-body">
+        <form id="room-form" class="stack-form">
+          <div class="form-row">
+            <div class="field">
+              <label>Room number</label>
+              <input type="text" id="room-number" required>
+            </div>
+            <div class="field">
+              <label>Room type</label>
+              <select id="room-type">
+                <option>Single</option>
+                <option>Double Bed</option>
+                <option>Queen Size</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label>Price per night</label>
+              <input type="number" id="room-price" step="0.01" required>
+            </div>
+            <div class="field">
+              <label>Capacity</label>
+              <input type="number" id="room-capacity" min="1" value="2">
+            </div>
+          </div>
+          <div class="field">
+            <label>Description</label>
+            <textarea id="room-description"></textarea>
+          </div>
+          <button class="btn btn-primary" type="submit">Add room</button>
+          <div id="room-status" class="status-msg"></div>
+        </form>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-bottom:24px;">
+      <div class="panel-head">
+        <h3>All rooms</h3>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Room</th>
+            <th>Type</th>
+            <th>Capacity</th>
+            <th>Price/night</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="rooms-body">
+          <tr><td colspan="6" style="text-align:center; color:#7a7560;">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h3>All bookings</h3>
+        <div class="tabs" id="tabs">
+          <button class="tab-btn active" data-status="">All</button>
+          <button class="tab-btn" data-status="pending">Pending</button>
+          <button class="tab-btn" data-status="confirmed">Confirmed</button>
+          <button class="tab-btn" data-status="checked_in">Checked in</button>
+          <button class="tab-btn" data-status="checked_out">Checked out</button>
+          <button class="tab-btn" data-status="cancelled">Cancelled</button>
+        </div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Guest</th>
+            <th>Room</th>
+            <th>Check-in</th>
+            <th>Check-out</th>
+            <th>Total</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="bookings-body">
+          <tr><td colspan="6" style="text-align:center; color:#7a7560;">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+
+<!-- Edit room modal -->
+<div class="modal-overlay" id="edit-room-modal">
+  <div class="modal">
+    <button class="modal-close" id="edit-room-close" aria-label="Close">&times;</button>
+    <h3>Edit room</h3>
+    <p class="modal-sub" id="edit-room-sub"></p>
+
+    <form id="edit-room-form" class="stack-form">
+      <input type="hidden" id="edit-room-id">
+      <div class="form-row">
+        <div class="field">
+          <label>Room number</label>
+          <input type="text" id="edit-room-number" required>
+        </div>
+        <div class="field">
+          <label>Room type</label>
+          <select id="edit-room-type">
+            <option>Single</option>
+            <option>Double Bed</option>
+            <option>Queen Size</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label>Price per night</label>
+          <input type="number" id="edit-room-price" step="0.01" required>
+        </div>
+        <div class="field">
+          <label>Capacity</label>
+          <input type="number" id="edit-room-capacity" min="1">
+        </div>
+      </div>
+      <div class="field">
+        <label>Status</label>
+        <select id="edit-room-status">
+          <option value="available">Available</option>
+          <option value="maintenance">Maintenance</option>
+          <option value="unavailable">Unavailable</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Description</label>
+        <textarea id="edit-room-description"></textarea>
+      </div>
+      <button class="btn btn-primary" type="submit">Save changes</button>
+      <button class="btn btn-outline" type="button" id="delete-room-btn" style="color:#B7472A; border-color:#B7472A;">Delete room</button>
+      <div id="edit-room-status-msg" class="status-msg"></div>
+    </form>
+  </div>
+</div>
+
+<script src="/admin/js/shared.js"></script>
+<script src="/admin/js/admin.js"></script>
+</body>
+</html>

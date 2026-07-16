@@ -1,0 +1,41 @@
+services:
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-dekyiba_root_pw}
+      MYSQL_DATABASE: dekyiba_hotel
+    volumes:
+      - dekyiba_db_data:/var/lib/mysql
+      # Only runs on first boot (when the data volume is empty) — this is what
+      # creates the schema. Re-running docker compose up later will NOT wipe data.
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${DB_PASSWORD:-dekyiba_root_pw}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_USER: root
+      DB_PASSWORD: ${DB_PASSWORD:-dekyiba_root_pw}
+      DB_NAME: dekyiba_hotel
+      DB_PORT: 3306
+      JWT_SECRET: ${JWT_SECRET:-change_this_to_a_long_random_string}
+      ADMIN_DEFAULT_PASSWORD: ${ADMIN_DEFAULT_PASSWORD:-Dekyiba@2026}
+      PORT: 4000
+    ports:
+      - "4000:4000"
+    volumes:
+      # Room photos / menu uploads survive container rebuilds
+      - ./public/uploads:/app/public/uploads
+
+volumes:
+  dekyiba_db_data:

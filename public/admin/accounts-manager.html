@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.ico">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="theme-color" content="#171B34">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dekyiba">
+  <title>Accounts Manager — Dekyiba Hotel</title>
+  <link rel="stylesheet" href="/admin/css/admin.css" />
+</head>
+<body class="admin">
+  <div class="admin-shell">
+    <aside class="sidebar">
+      <div class="brand">Dekyiba <span style="color:var(--gold);">Hotel</span></div>
+      <nav>
+        <a href="/admin/dashboard.html">Bookings</a>
+        <a href="/admin/settings.html" data-manager-only>Settings</a>
+        <a href="/admin/restaurant.html" data-manager-only>Restaurant</a>
+        <a href="/admin/bar.html" data-manager-only>Bar</a>
+        <a href="/admin/employees.html" data-manager-only>Employees</a>
+        <a href="/admin/accounts-manager.html" class="active" data-manager-only>Accounts Manager</a>
+      </nav>
+      <div class="logout" id="logout-btn">Sign out</div>
+    </aside>
+
+    <main class="main">
+      <div class="main-head">
+        <div>
+          <h2>Accounts Manager</h2>
+          <p>Manage bookings, room status, and run revenue reports and calculations from one place.</p>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-bottom:24px;">
+        <div class="panel-head">
+          <h3>Room inventory</h3>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Room</th>
+              <th>Type</th>
+              <th>Capacity</th>
+              <th>Price/night</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="rooms-body">
+            <tr><td colspan="5" style="text-align:center; color:#7a7560;">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="panel" style="margin-bottom:24px;">
+        <div class="panel-head">
+          <h3>Bookings</h3>
+          <div class="tabs" id="tabs">
+            <button class="tab-btn active" data-status="">All</button>
+            <button class="tab-btn" data-status="pending">Pending</button>
+            <button class="tab-btn" data-status="confirmed">Confirmed</button>
+            <button class="tab-btn" data-status="checked_in">Checked in</button>
+            <button class="tab-btn" data-status="checked_out">Checked out</button>
+            <button class="tab-btn" data-status="cancelled">Cancelled</button>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Guest</th>
+              <th>Room</th>
+              <th>Check-in</th>
+              <th>Check-out</th>
+              <th>Total</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="bookings-body">
+            <tr><td colspan="6" style="text-align:center; color:#7a7560;">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h3>Operational report</h3>
+          <div class="tabs">
+            <button class="tab-btn active" data-range="7">Last 7 days</button>
+            <button class="tab-btn" data-range="14">Last 14 days</button>
+            <button class="tab-btn" data-range="30">Last 30 days</button>
+            <button class="tab-btn" data-range="today">Today</button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="form-row" style="align-items:flex-end;">
+            <div class="field"><label>From</label><input type="date" id="report-start-date" /></div>
+            <div class="field"><label>To</label><input type="date" id="report-end-date" /></div>
+            <button class="btn btn-outline" id="report-custom-range" type="button" style="height:42px;">Use custom range</button>
+          </div>
+          <div class="stat-grid">
+            <div class="stat-card"><div class="label">Room revenue</div><div class="value" id="report-room-revenue">—</div></div>
+            <div class="stat-card"><div class="label">Reservations</div><div class="value" id="report-room-bookings">—</div></div>
+            <div class="stat-card"><div class="label">Restaurant sales</div><div class="value" id="report-restaurant-sales">—</div></div>
+            <div class="stat-card"><div class="label">Bar sales</div><div class="value" id="report-bar-sales">—</div></div>
+          </div>
+          <div class="summary-box">
+            <div class="row total"><span>Total revenue</span><span id="report-total-revenue">—</span></div>
+            <p style="color:#7a7560; font-size:0.82rem; margin:6px 0 0;" id="report-window-label"></p>
+          </div>
+          <button class="btn btn-primary" id="export-report">Export CSV report</button>
+          <div id="export-status" class="status-msg"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="/admin/js/shared.js"></script>
+  <script src="/admin/js/accounts-manager.js"></script>
+</body>
+</html>

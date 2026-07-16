@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.ico">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="theme-color" content="#171B34">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dekyiba">
+<title>Staff Login — Dekyiba Hotel</title>
+<link rel="stylesheet" href="/admin/css/admin.css">
+</head>
+<body class="admin">
+
+<div class="login-wrap">
+  <div class="login-card">
+    <div class="brand">Dekyiba <span style="color:var(--gold);">Hotel</span></div>
+    <span class="eyebrow">Staff portal</span>
+
+    <div class="portal-tabs" id="portal-tabs">
+      <button type="button" class="portal-tab active" data-portal="admin">Admin</button>
+      <button type="button" class="portal-tab" data-portal="employee">Employee</button>
+    </div>
+    <p class="portal-hint" id="portal-hint">Manager sign-in — opens the admin dashboard.</p>
+
+    <form id="login-form">
+      <div class="field">
+        <label for="username">Username</label>
+        <input type="text" id="username" required autocomplete="username">
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" required autocomplete="current-password">
+      </div>
+      <button type="submit" class="btn btn-primary">Sign in</button>
+      <div class="status-msg" id="login-status"></div>
+    </form>
+  </div>
+</div>
+
+<script>
+let portal = 'admin';
+
+const hints = {
+  admin: 'Manager sign-in — opens the admin dashboard.',
+  employee: 'Employee sign-in — takes you back to the home page.'
+};
+
+document.getElementById('portal-tabs').addEventListener('click', (e) => {
+  const btn = e.target.closest('.portal-tab');
+  if (!btn) return;
+  portal = btn.dataset.portal;
+  document.querySelectorAll('.portal-tab').forEach((t) => t.classList.toggle('active', t === btn));
+  document.getElementById('portal-hint').textContent = hints[portal];
+  document.getElementById('login-status').className = 'status-msg';
+});
+
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const statusEl = document.getElementById('login-status');
+  statusEl.className = 'status-msg';
+
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: document.getElementById('username').value,
+        password: document.getElementById('password').value,
+        portal
+      })
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      statusEl.textContent = data.error || 'Login failed.';
+      statusEl.className = 'status-msg show error';
+      return;
+    }
+
+    localStorage.setItem('dekyiba_token', data.token);
+    localStorage.setItem('dekyiba_admin', JSON.stringify(data.admin));
+
+    window.location.href = portal === 'admin' ? '/admin/dashboard.html' : '/';
+  } catch (err) {
+    statusEl.textContent = 'Network error. Please try again.';
+    statusEl.className = 'status-msg show error';
+  }
+});
+</script>
+</body>
+</html>

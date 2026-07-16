@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.ico">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="theme-color" content="#171B34">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dekyiba">
+  <title>Restaurant — Dekyiba Hotel</title>
+  <link rel="stylesheet" href="/admin/css/admin.css" />
+</head>
+<body class="admin">
+  <div class="admin-shell">
+    <aside class="sidebar">
+      <div class="brand">Dekyiba <span style="color:var(--gold);">Hotel</span></div>
+      <nav>
+        <a href="/admin/dashboard.html">Bookings</a>
+        <a href="/admin/settings.html" data-manager-only>Settings</a>
+        <a href="/admin/restaurant.html" class="active" data-manager-only>Restaurant</a>
+        <a href="/admin/bar.html" data-manager-only>Bar</a>
+        <a href="/admin/employees.html" data-manager-only>Employees</a>
+        <a href="/admin/accounts-manager.html" data-manager-only>Accounts Manager</a>
+      </nav>
+      <div class="logout" id="logout-btn">Sign out</div>
+    </aside>
+
+    <main class="main">
+      <div class="main-head">
+        <div>
+          <h2>Restaurant operations</h2>
+          <p>Manage menu items, record sales, and review restaurant performance.</p>
+        </div>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-card"><div class="label">Menu items</div><div class="value" id="menu-count">—</div></div>
+        <div class="stat-card"><div class="label">Today sales</div><div class="value" id="restaurant-sales">—</div></div>
+        <div class="stat-card"><div class="label">Delivered orders</div><div class="value" id="restaurant-delivered">—</div></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h3>Upload restaurant menu</h3>
+        </div>
+        <div class="panel-body">
+          <form id="menu-upload-form" class="stack-form">
+            <div class="field">
+              <label>Menu file</label>
+              <input type="file" id="menu-file" accept=".png,.jpg,.jpeg,.pdf" />
+            </div>
+            <button class="btn btn-primary" type="submit">Upload menu</button>
+            <div id="menu-upload-status" class="status-msg"></div>
+            <div id="menu-upload-link"></div>
+          </form>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:24px;">
+        <div class="panel-head">
+          <h3>Add menu item</h3>
+        </div>
+        <div class="panel-body">
+          <form id="menu-form" class="stack-form">
+            <div class="form-row">
+              <div class="field"><label>Name</label><input type="text" id="menu-name" required /></div>
+              <div class="field"><label>Category</label><input type="text" id="menu-category" value="General" /></div>
+            </div>
+            <div class="form-row">
+              <div class="field"><label>Price</label><input type="number" id="menu-price" step="0.01" required /></div>
+              <div class="field"><label>Image URL</label><input type="text" id="menu-image" /></div>
+            </div>
+            <div class="field"><label>Description</label><textarea id="menu-description"></textarea></div>
+            <div class="field checkbox-row"><label><input type="checkbox" id="menu-active" checked /> Active</label></div>
+            <button class="btn btn-primary" type="submit">Save menu item</button>
+            <div id="menu-status" class="status-msg"></div>
+          </form>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:24px;">
+        <div class="panel-head"><h3>Current menu items</h3></div>
+        <table>
+          <thead><tr><th>Name</th><th>Category</th><th>Price</th><th>Status</th><th></th></tr></thead>
+          <tbody id="menu-items-body"><tr><td colspan="5" style="text-align:center; color:#7a7560;">Loading…</td></tr></tbody>
+        </table>
+      </div>
+
+      <div class="panel" style="margin-top:24px;">
+        <div class="panel-head">
+          <div>
+            <h3>Restaurant sales overview</h3>
+            <p style="color:#7a7560; font-size:0.82rem; margin:4px 0 0;">Orders are taken from the home page by signed-in staff. This is a live read-only view.</p>
+          </div>
+        </div>
+        <table>
+          <thead><tr><th>Item</th><th>Category</th><th>Qty</th><th>Amount</th><th>Status</th><th>Time</th></tr></thead>
+          <tbody id="restaurant-sales-body"><tr><td colspan="6" style="text-align:center; color:#7a7560;">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <script src="/admin/js/shared.js"></script>
+  <script src="/admin/js/restaurant.js"></script>
+</body>
+</html>

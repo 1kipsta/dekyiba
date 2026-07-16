@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.ico">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="theme-color" content="#171B34">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dekyiba">
+  <title>Bar — Dekyiba Hotel</title>
+  <link rel="stylesheet" href="/admin/css/admin.css" />
+</head>
+<body class="admin">
+  <div class="admin-shell">
+    <aside class="sidebar">
+      <div class="brand">Dekyiba <span style="color:var(--gold);">Hotel</span></div>
+      <nav>
+        <a href="/admin/dashboard.html">Bookings</a>
+        <a href="/admin/settings.html" data-manager-only>Settings</a>
+        <a href="/admin/restaurant.html" data-manager-only>Restaurant</a>
+        <a href="/admin/bar.html" class="active" data-manager-only>Bar</a>
+        <a href="/admin/employees.html" data-manager-only>Employees</a>
+        <a href="/admin/accounts-manager.html" data-manager-only>Accounts Manager</a>
+      </nav>
+      <div class="logout" id="logout-btn">Sign out</div>
+    </aside>
+
+    <main class="main">
+      <div class="main-head">
+        <div>
+          <h2>Bar order management</h2>
+          <p>Record bar sales, track status, and monitor revenue from beverages and refreshments.</p>
+        </div>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-card"><div class="label">Orders today</div><div class="value" id="bar-order-count">—</div></div>
+        <div class="stat-card"><div class="label">Revenue</div><div class="value" id="bar-revenue">—</div></div>
+        <div class="stat-card"><div class="label">Bar items</div><div class="value" id="bar-item-count">—</div></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3>Upload bar items</h3></div>
+        <div class="panel-body">
+          <form id="bar-items-form" class="stack-form">
+            <div class="field">
+              <label>Item name</label>
+              <input type="text" id="bar-item-name" required />
+            </div>
+            <div class="form-row">
+              <div class="field"><label>Price</label><input type="number" id="bar-item-price" step="0.01" required /></div>
+              <div class="field"><label>Category</label><input type="text" id="bar-item-category" value="Beverage" /></div>
+            </div>
+            <button class="btn btn-primary" type="submit">Save bar item</button>
+            <div id="bar-items-status" class="status-msg"></div>
+          </form>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:24px;">
+        <div class="panel-head"><h3>Current bar items</h3></div>
+        <table>
+          <thead><tr><th>Name</th><th>Category</th><th>Price</th><th></th></tr></thead>
+          <tbody id="bar-items-body"><tr><td colspan="4" style="text-align:center; color:#7a7560;">Loading…</td></tr></tbody>
+        </table>
+      </div>
+
+      <div class="panel" style="margin-top:24px;">
+        <div class="panel-head">
+          <div>
+            <h3>Bar order ledger</h3>
+            <p style="color:#7a7560; font-size:0.82rem; margin:4px 0 0;">Orders are taken from the home page by signed-in staff. This is a live read-only view.</p>
+          </div>
+        </div>
+        <table>
+          <thead><tr><th>Guest</th><th>Item</th><th>Qty</th><th>Amount</th><th>Status</th><th>Time</th></tr></thead>
+          <tbody id="bar-orders-body"><tr><td colspan="6" style="text-align:center; color:#7a7560;">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <script src="/admin/js/shared.js"></script>
+  <script src="/admin/js/bar.js"></script>
+</body>
+</html>

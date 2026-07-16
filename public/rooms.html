@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.ico">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="theme-color" content="#171B34">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dekyiba">
+<title>Book a Room — Dekyiba Hotel</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <nav class="nav">
+    <a href="/" class="brand">Dekyiba <span>Hotel</span></a>
+    <div class="nav-links">
+      <a href="/">Home</a>
+    </div>
+    <a href="/" class="nav-cta">Back to home</a>
+  </nav>
+</header>
+
+<div class="kente-stripe"></div>
+
+<section class="hero" style="min-height:auto; padding:64px 0 40px;">
+  <div class="hero-inner">
+    <p class="eyebrow">Accommodation</p>
+    <h1>Book a room</h1>
+    <p class="lede">Choose your dates to check live availability, then reserve the room that suits you.</p>
+
+    <div class="booking-widget">
+      <div class="field">
+        <label for="s-checkin">Check-in</label>
+        <input type="date" id="s-checkin">
+      </div>
+      <div class="field">
+        <label for="s-checkout">Check-out</label>
+        <input type="date" id="s-checkout">
+      </div>
+      <div class="field">
+        <label for="s-guests">Guests</label>
+        <select id="s-guests">
+          <option value="1">1 guest</option>
+          <option value="2" selected>2 guests</option>
+          <option value="3">3 guests</option>
+          <option value="4">4 guests</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" id="search-btn">Check availability</button>
+    </div>
+  </div>
+</section>
+
+<section id="rooms">
+  <div class="container">
+    <div class="section-head">
+      <p class="eyebrow">Rooms &amp; suites</p>
+      <h2>Available rooms</h2>
+      <p>Every room includes free Wi-Fi, breakfast options, and 24-hour front desk service. Select your dates above to see live availability and pricing.</p>
+    </div>
+    <div class="room-grid" id="room-grid">
+      <!-- Rooms are rendered here by rooms.js -->
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer" id="contact">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="brand">Dekyiba <span>Hotel</span></div>
+        <p style="max-width:280px; line-height:1.6; font-size:0.9rem;">Tarkwa, Western Region, Ghana</p>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <p style="font-size:0.9rem; line-height:2;">+233 20 000 0000<br>frontdesk@dekyibahotel.com</p>
+      </div>
+      <div>
+        <h4>Hotel</h4>
+        <p style="font-size:0.9rem; line-height:2;">
+          <a href="/">Home</a><br>
+          <a href="/admin/login.html">Staff login</a>
+        </p>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>&copy; 2026 Dekyiba Hotel</span>
+      <span>Tarkwa, Ghana</span>
+    </div>
+  </div>
+</footer>
+
+<!-- Booking modal -->
+<div class="modal-overlay" id="booking-modal">
+  <div class="modal">
+    <button class="modal-close" id="modal-close" aria-label="Close">&times;</button>
+    <h3 id="modal-room-title">Reserve room</h3>
+    <p class="modal-sub" id="modal-room-sub"></p>
+
+    <form id="booking-form">
+      <input type="hidden" id="b-room-id">
+      <div class="form-row">
+        <div class="field">
+          <label for="b-checkin">Check-in</label>
+          <input type="date" id="b-checkin" required>
+        </div>
+        <div class="field">
+          <label for="b-checkout">Check-out</label>
+          <input type="date" id="b-checkout" required>
+        </div>
+      </div>
+      <div class="field">
+        <label for="b-name">Full name</label>
+        <input type="text" id="b-name" required>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label for="b-email">Email</label>
+          <input type="email" id="b-email" required>
+        </div>
+        <div class="field">
+          <label for="b-phone">Phone</label>
+          <input type="tel" id="b-phone" required>
+        </div>
+      </div>
+      <div class="field">
+        <label for="b-guests">Number of guests</label>
+        <input type="number" id="b-guests" min="1" value="1" required>
+      </div>
+      <div class="field">
+        <label for="b-request">Special request (optional)</label>
+        <input type="text" id="b-request" placeholder="e.g. late check-in, extra towels">
+      </div>
+
+      <div class="summary-box" id="booking-summary" style="display:none;">
+        <div class="row"><span id="sum-nights"></span><span id="sum-rate"></span></div>
+        <div class="row total"><span>Total</span><span id="sum-total"></span></div>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width:100%; margin-top:8px;">Confirm reservation</button>
+      <div class="status-msg" id="booking-status"></div>
+    </form>
+  </div>
+</div>
+
+<script src="/js/rooms.js"></script>
+</body>
+</html>

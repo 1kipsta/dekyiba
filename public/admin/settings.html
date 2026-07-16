@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.ico">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="theme-color" content="#171B34">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dekyiba">
+  <title>Settings — Dekyiba Hotel</title>
+  <link rel="stylesheet" href="/admin/css/admin.css" />
+</head>
+<body class="admin">
+  <div class="admin-shell">
+    <aside class="sidebar">
+      <div class="brand">Dekyiba <span style="color:var(--gold);">Hotel</span></div>
+      <nav>
+        <a href="/admin/dashboard.html">Bookings</a>
+        <a href="/admin/settings.html" class="active" data-manager-only>Settings</a>
+        <a href="/admin/restaurant.html" data-manager-only>Restaurant</a>
+        <a href="/admin/bar.html" data-manager-only>Bar</a>
+        <a href="/admin/employees.html" data-manager-only>Employees</a>
+        <a href="/admin/accounts-manager.html" data-manager-only>Accounts Manager</a>
+      </nav>
+      <div class="logout" id="logout-btn">Sign out</div>
+    </aside>
+
+    <main class="main">
+      <div class="main-head">
+        <div>
+          <h2>Hotel settings</h2>
+          <p>Configure your hotel identity, reporting defaults, and service modules.</p>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h3>Management preferences</h3>
+        </div>
+        <div class="panel-body">
+          <form id="settings-form" class="stack-form">
+            <div class="form-row">
+              <div class="field">
+                <label>Hotel name</label>
+                <input type="text" id="hotel_name" required />
+              </div>
+              <div class="field">
+                <label>Hotel address</label>
+                <input type="text" id="hotel_address" required />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="field">
+                <label>Currency</label>
+                <input type="text" id="currency" value="GH₵" />
+              </div>
+              <div class="field">
+                <label>Tax rate (%)</label>
+                <input type="number" id="tax_rate" step="0.01" value="0" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="field">
+                <label>Default report window</label>
+                <select id="report_window">
+                  <option value="7">Last 7 days</option>
+                  <option value="14">Last 14 days</option>
+                  <option value="30">Last 30 days</option>
+                  <option value="today">Today</option>
+                </select>
+              </div>
+            </div>
+            <div class="field checkbox-row">
+              <label><input type="checkbox" id="restaurant_enabled" checked /> Enable restaurant module</label>
+              <label><input type="checkbox" id="bar_enabled" checked /> Enable bar module</label>
+            </div>
+            <button class="btn btn-primary" type="submit">Save settings</button>
+            <div id="settings-status" class="status-msg"></div>
+          </form>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="/admin/js/shared.js"></script>
+  <script src="/admin/js/settings.js"></script>
+</body>
+</html>
