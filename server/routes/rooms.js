@@ -1,8 +1,26 @@
 const express = require('express');
+const jwt = require('jsonwebtoken');
 const pool = require('../db');
 const requireAuth = require('../middleware/auth');
+require('dotenv').config();
 
 const router = express.Router();
+
+// True if the request carries a valid staff token. Used only to decide which
+// rooms to return below — GET /api/rooms is public (the booking page hits it
+// with no token), but the admin dashboard hits this same endpoint with a
+// token and needs to see every room, including ones marked unavailable, so
+// staff can manage them.
+function isStaffRequest(req) {
+  const header = req.headers.authorization;
+  if (!header || !header.startsWith('Bearer ')) return false;
+  try {
+    jwt.verify(header.split(' ')[1], process.env.JWT_SECRET);
+    return true;
+  } catch (err) {
+    return false;
+  }
+}
 
 // GET /api/rooms  — public: list all rooms, optionally filtered by availability dates
 // Query params: check_in, check_out (both optional, both required together)
@@ -25,7 +43,9 @@ router.get('/', async (req, res) => {
       return res.json(rooms);
     }
 
-    const [rooms] = await pool.query('SELECT * FROM rooms ORDER BY room_type, room_number');
+    const [rooms] = isStaffRequest(req)
+      ? await pool.query(`SELECT * FROM rooms ORDER BY room_type, room_number`)
+      : await pool.query(`SELECT * FROM rooms WHERE status = 'available' ORDER BY room_type, room_number`);
     res.json(rooms);
   } catch (err) {
     console.error(err);
