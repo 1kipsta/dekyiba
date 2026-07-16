@@ -114,6 +114,37 @@ router.post('/admins', requireAuth, requireManager, async (req, res) => {
   }
 });
 
+router.delete('/admins/:id', requireAuth, requireManager, async (req, res) => {
+  try {
+    await ensureTables();
+    const targetId = Number(req.params.id);
+
+    if (targetId === req.admin.admin_id) {
+      return res.status(400).json({ error: 'You cannot delete your own account while signed in.' });
+    }
+
+    const [[target]] = await pool.query('SELECT admin_id, role FROM admins WHERE admin_id = ?', [targetId]);
+    if (!target) {
+      return res.status(404).json({ error: 'Account not found.' });
+    }
+
+    if (target.role === 'manager') {
+      const [[{ managerCount }]] = await pool.query(
+        "SELECT COUNT(*) AS managerCount FROM admins WHERE role = 'manager'"
+      );
+      if (managerCount <= 1) {
+        return res.status(400).json({ error: 'Cannot delete the only remaining manager account.' });
+      }
+    }
+
+    await pool.query('DELETE FROM admins WHERE admin_id = ?', [targetId]);
+    res.json({ message: 'Account deleted.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Could not delete employee account.' });
+  }
+});
+
 router.get('/settings', requireAuth, requireManager, async (req, res) => {
   try {
     const settings = await getSettingsMap();
