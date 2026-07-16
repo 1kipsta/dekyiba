@@ -300,7 +300,10 @@ router.post('/restaurant/menu/upload', requireAuth, requireManager, async (req, 
     res.json({ success: true, file_url: relativePath, file_name: fileName });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Could not upload menu file.' });
+    const hint = process.env.VERCEL && !process.env.BLOB_READ_WRITE_TOKEN
+      ? 'No Blob store is connected to this project yet — add one from Vercel → Storage → Create Database → Blob.'
+      : err.message;
+    res.status(500).json({ error: `Could not upload menu file. ${hint}` });
   }
 });
 
