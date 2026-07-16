@@ -100,15 +100,23 @@ function reportQueryString(query) {
 
 async function loadReport(query = currentReportQuery) {
   currentReportQuery = query;
-  const res = await fetch(`${api}/reports/summary?${reportQueryString(query)}`, { headers: authHeaders() });
-  if (!res.ok) return;
-  const report = await res.json();
-  document.getElementById('report-room-revenue').textContent = money(report.room_revenue);
-  document.getElementById('report-room-bookings').textContent = report.room_bookings;
-  document.getElementById('report-restaurant-sales').textContent = money(report.restaurant_sales);
-  document.getElementById('report-bar-sales').textContent = money(report.bar_sales);
-  document.getElementById('report-total-revenue').textContent = money(report.total_revenue);
-  document.getElementById('report-window-label').textContent = report.label ? `Showing: ${report.label}` : '';
+  const labelEl = document.getElementById('report-window-label');
+  try {
+    const res = await fetch(`${api}/reports/summary?${reportQueryString(query)}`, { headers: authHeaders() });
+    const report = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      labelEl.textContent = report.error || 'Could not load the report. Please try again.';
+      return;
+    }
+    document.getElementById('report-room-revenue').textContent = money(report.room_revenue);
+    document.getElementById('report-room-bookings').textContent = report.room_bookings;
+    document.getElementById('report-restaurant-sales').textContent = money(report.restaurant_sales);
+    document.getElementById('report-bar-sales').textContent = money(report.bar_sales);
+    document.getElementById('report-total-revenue').textContent = money(report.total_revenue);
+    labelEl.textContent = report.label ? `Showing: ${report.label}` : '';
+  } catch (err) {
+    labelEl.textContent = 'Network error loading report. Please check your connection.';
+  }
 }
 
 document.querySelectorAll('#tabs .tab-btn').forEach((btn) => {
