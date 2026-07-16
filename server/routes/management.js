@@ -458,11 +458,26 @@ router.get('/reports/export', requireAuth, requireManager, async (req, res) => {
     const { since, until, label } = resolveReportWindow(req.query);
     const [restaurantRows] = await pool.query('SELECT item_name AS item, category, quantity, total_amount AS amount, status, sold_at AS date FROM restaurant_sales WHERE sold_at >= ? AND sold_at < ? ORDER BY sold_at DESC', [since, until]);
     const [barRows] = await pool.query('SELECT item_name AS item, guest_name AS category, quantity, total_amount AS amount, status, created_at AS date FROM bar_orders WHERE created_at >= ? AND created_at < ? ORDER BY created_at DESC', [since, until]);
+    const [bookingRows] = await pool.query(
+      `SELECT CONCAT('Room ', r.room_number, ' (', r.room_type, ')') AS item,
+              g.full_name AS category,
+              DATEDIFF(b.check_out, b.check_in) AS quantity,
+              b.total_amount AS amount,
+              b.status AS status,
+              b.created_at AS date
+       FROM bookings b
+       JOIN guests g ON b.guest_id = g.guest_id
+       JOIN rooms r ON b.room_id = r.room_id
+       WHERE b.created_at >= ? AND b.created_at < ?
+       ORDER BY b.created_at DESC`,
+      [since, until]
+    );
 
     const rows = [
       ['type', 'item', 'category', 'quantity', 'amount', 'status', 'date'],
       ...restaurantRows.map((row) => ['restaurant', row.item, row.category, row.quantity, row.amount, row.status, row.date]),
-      ...barRows.map((row) => ['bar', row.item, row.category, row.quantity, row.amount, row.status, row.date])
+      ...barRows.map((row) => ['bar', row.item, row.category, row.quantity, row.amount, row.status, row.date]),
+      ...bookingRows.map((row) => ['room_booking', row.item, row.category, row.quantity, row.amount, row.status, row.date])
     ];
 
     // Quote every field and defuse spreadsheet formula injection (values starting
