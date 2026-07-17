@@ -11,13 +11,30 @@ const router = express.Router();
 let columnsMigrated = false;
 
 async function ensureTables() {
+  // 1. Hotel Settings Table
   await pool.query(`
     CREATE TABLE IF NOT EXISTS hotel_settings (
       setting_key VARCHAR(80) PRIMARY KEY,
       setting_value TEXT NOT NULL,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `);
+
+  // 2. Restaurant Menu Items Table (Fixed for Postgres)
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS restaurant_menu_items (
+      menu_item_id SERIAL PRIMARY KEY,            -- SERIAL means auto-increment in Postgres
+      name VARCHAR(120) NOT NULL,
+      category VARCHAR(80) NOT NULL DEFAULT 'General',
+      department VARCHAR(50) NOT NULL DEFAULT 'restaurant', -- Clean text column instead of ENUM
+      price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+      description TEXT,
+      image_url VARCHAR(255) DEFAULT NULL,
+      is_active SMALLINT NOT NULL DEFAULT 1,       -- SMALLINT replaces TINYINT
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+}
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS restaurant_menu_items (
