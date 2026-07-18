@@ -10,6 +10,7 @@ const managementRouter = require('./routes/management');
 const pageGate = require('./middleware/pageGate');
 
 const app = express();
+app.set('trust proxy',1);
 const PORT = process.env.PORT || 4000;
 
 app.use(cors());
