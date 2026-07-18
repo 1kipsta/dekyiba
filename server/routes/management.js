@@ -261,8 +261,22 @@ router.delete('/restaurant/menu/:id', requireAuth, requireManager, async (req, r
   }
 });
 
+// GET /management/restaurant/menu/file — returns the currently stored menu
+// file URL (if any), so the admin page can restore the "View uploaded menu
+// file" link after a reload instead of only showing it right after upload.
+router.get('/restaurant/menu/file', requireAuth, async (req, res) => {
+  try {
+    const settings = await getSettingsMap();
+    res.json({ file_url: settings.restaurant_menu_file_url || null });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Could not load menu file status.' });
+  }
+});
+
 router.post('/restaurant/menu/upload', requireAuth, requireManager, async (req, res) => {
   try {
+    await ensureTables();
     const { file_name, mime_type, file_data } = req.body;
     if (!file_data) return res.status(400).json({ error: 'No menu file supplied.' });
 
@@ -278,6 +292,8 @@ router.post('/restaurant/menu/upload', requireAuth, requireManager, async (req, 
     const fileName = `${Date.now()}-${safeBase}${fileExt}`;
     const buffer = Buffer.from(base64Data, 'base64');
 
+    let fileUrl;
+
     // On Vercel the filesystem is read-only/ephemeral (writes to /public don't
     // persist or even work in production), so uploads go to Vercel Blob
     // instead. Locally / in Docker, where a persistent volume is mounted at
@@ -288,20 +304,29 @@ router.post('/restaurant/menu/upload', requireAuth, requireManager, async (req, 
         access: 'public',
         contentType: mime_type || (fileExt === '.pdf' ? 'application/pdf' : 'image/png')
       });
-      return res.json({ success: true, file_url: blob.url, file_name: fileName });
+      fileUrl = blob.url;
+    } else {
+      const uploadsDir = path.join(__dirname, '..', '..', 'public', 'uploads');
+      if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+      const filePath = path.join(uploadsDir, fileName);
+      // Belt-and-braces: confirm the resolved path still lives inside uploadsDir.
+      if (!filePath.startsWith(uploadsDir + path.sep)) {
+        return res.status(400).json({ error: 'Invalid file name.' });
+      }
+      fs.writeFileSync(filePath, buffer);
+      fileUrl = `/uploads/${fileName}`;
     }
 
-    const uploadsDir = path.join(__dirname, '..', '..', 'public', 'uploads');
-    if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
-    const filePath = path.join(uploadsDir, fileName);
-    // Belt-and-braces: confirm the resolved path still lives inside uploadsDir.
-    if (!filePath.startsWith(uploadsDir + path.sep)) {
-      return res.status(400).json({ error: 'Invalid file name.' });
-    }
-    fs.writeFileSync(filePath, buffer);
+    // Persist the URL so it survives page reloads / new sessions — without
+    // this, the "View uploaded menu file" link only ever existed for the
+    // single response that triggered the upload.
+    await pool.query(
+      `INSERT INTO hotel_settings (setting_key, setting_value) VALUES ('restaurant_menu_file_url', ?)
+       ON CONFLICT (setting_key) DO UPDATE SET setting_value = EXCLUDED.setting_value, updated_at = CURRENT_TIMESTAMP`,
+      [fileUrl]
+    );
 
-    const relativePath = `/uploads/${fileName}`;
-    res.json({ success: true, file_url: relativePath, file_name: fileName });
+    res.json({ success: true, file_url: fileUrl, file_name: fileName });
   } catch (err) {
     console.error(err);
     const hint = process.env.VERCEL && !process.env.BLOB_READ_WRITE_TOKEN
