@@ -94,6 +94,32 @@ async function addMenuItem(e) {
   }
 }
 
+function renderMenuFileLink(fileUrl) {
+  const linkEl = document.getElementById('menu-upload-link');
+  if (!linkEl) return;
+  linkEl.innerHTML = '';
+  if (!fileUrl) return;
+  const link = document.createElement('a');
+  link.href = fileUrl;
+  link.target = '_blank';
+  link.textContent = 'View uploaded menu file';
+  linkEl.appendChild(link);
+}
+
+// Runs on page load (and can be called again after upload) so the "View
+// uploaded menu file" link survives refreshes instead of only appearing
+// right after a successful upload.
+async function loadMenuFileStatus() {
+  try {
+    const res = await fetch(`${api}/restaurant/menu/file`, { headers: authHeaders() });
+    if (!res.ok) return;
+    const { file_url } = await res.json();
+    renderMenuFileLink(file_url);
+  } catch (err) {
+    // silently ignore — link just won't show
+  }
+}
+
 async function uploadMenuFile(e) {
   e.preventDefault();
   const fileInput = document.getElementById('menu-file');
@@ -117,11 +143,7 @@ async function uploadMenuFile(e) {
       if (res.ok && result.success) {
         status.textContent = 'Menu uploaded successfully.';
         status.className = 'status-msg show success';
-        const link = document.createElement('a');
-        link.href = result.file_url;
-        link.target = '_blank';
-        link.textContent = 'View uploaded menu file';
-        linkEl.appendChild(link);
+        renderMenuFileLink(result.file_url);
         document.getElementById('menu-upload-form').reset();
       } else {
         status.textContent = result.error || 'Upload failed.';
@@ -138,4 +160,5 @@ async function uploadMenuFile(e) {
 document.getElementById('menu-form').addEventListener('submit', addMenuItem);
 document.getElementById('menu-upload-form').addEventListener('submit', uploadMenuFile);
 loadRestaurantOverview();
+loadMenuFileStatus();
 setInterval(loadRestaurantOverview, 15000);
