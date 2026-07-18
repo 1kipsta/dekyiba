@@ -62,7 +62,7 @@ router.post('/login', loginLimiter, async (req, res) => {
     }
 
     await pool.query(
-      'UPDATE admins SET is_checked_in = 1, last_login_at = CURRENT_TIMESTAMP WHERE admin_id = ?',
+      'UPDATE admins SET is_checked_in = true, last_login_at = CURRENT_TIMESTAMP WHERE admin_id = ?',
       [admin.admin_id]
     );
 
@@ -96,7 +96,7 @@ router.post('/login', loginLimiter, async (req, res) => {
 router.post('/logout', requireAuth, async (req, res) => {
   try {
     await pool.query(
-      'UPDATE admins SET is_checked_in = 0, last_logout_at = CURRENT_TIMESTAMP WHERE admin_id = ?',
+      'UPDATE admins SET is_checked_in = false, last_logout_at = CURRENT_TIMESTAMP WHERE admin_id = ?',
       [req.admin.admin_id]
     );
     res.clearCookie(COOKIE_NAME);
