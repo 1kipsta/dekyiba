@@ -76,13 +76,13 @@ router.post('/', requireAuth, async (req, res) => {
   try {
     const [result] = await pool.query(
       `INSERT INTO rooms (room_number, room_type, description, price_per_night, capacity, image_url)
-       VALUES (?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?) RETURNING room_id`,
       [room_number, room_type, description || null, price_per_night, capacity || 2, image_url || null]
     );
     res.status(201).json({ room_id: result.insertId });
   } catch (err) {
     console.error(err);
-    if (err.code === 'ER_DUP_ENTRY') {
+    if (err.code === '23505') {
       return res.status(409).json({ error: 'A room with that number already exists.' });
     }
     res.status(500).json({ error: 'Could not create room.' });

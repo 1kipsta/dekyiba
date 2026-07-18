@@ -56,7 +56,7 @@ router.post('/', async (req, res) => {
       );
     } else {
       const [newGuest] = await conn.query(
-        'INSERT INTO guests (full_name, email, phone, id_number) VALUES (?, ?, ?, ?)',
+        'INSERT INTO guests (full_name, email, phone, id_number) VALUES (?, ?, ?, ?) RETURNING guest_id',
         [full_name, email, phone, id_number || null]
       );
       guestId = newGuest.insertId;
@@ -68,7 +68,7 @@ router.post('/', async (req, res) => {
 
     const [booking] = await conn.query(
       `INSERT INTO bookings (room_id, guest_id, check_in, check_out, num_guests, total_amount, special_request, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 'confirmed')`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'confirmed') RETURNING booking_id`,
       [room_id, guestId, check_in, check_out, num_guests || 1, totalAmount, special_request || null]
     );
 
@@ -171,7 +171,7 @@ router.get('/stats/summary', requireAuth, async (req, res) => {
     const [[{ revenue }]] = await pool.query(
       `SELECT COALESCE(SUM(total_amount), 0) AS revenue FROM bookings
        WHERE status IN ('confirmed','checked_in','checked_out')
-       AND MONTH(created_at) = MONTH(CURRENT_DATE())`
+       AND date_trunc('month', created_at) = date_trunc('month', CURRENT_DATE)`
     );
 
     res.json({

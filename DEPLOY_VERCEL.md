@@ -1,85 +1,94 @@
-# Deploying to Vercel
+# Deploying to Vercel (Postgres edition)
 
-This app now runs on Vercel as a single serverless function (`api/index.js`)
-that wraps the existing Express app. Every request — pages, static assets,
-and `/api/*` — is routed there by `vercel.json`. Locally or in Docker,
-nothing changes: `node server.js` still works exactly as before.
+This version of the app runs entirely on Vercel: the web app, the file
+uploads (Vercel Blob), and now the database too (Postgres via Neon, through
+Vercel's own Storage Marketplace). You don't need Aiven, Docker, or any
+external MySQL host anymore.
 
-## What changed for Vercel
+## What changed from the MySQL version
 
-- `server/server.js` now exports the Express app instead of always calling
-  `.listen()` (it still listens when you run it directly, e.g. locally).
-- `server/db.js` accepts a `DATABASE_URL` connection string, supports SSL,
-  and uses a much smaller connection pool by default when `VERCEL` is set —
-  serverless functions can run many instances in parallel, and a large pool
-  per instance (fine for one always-on Docker container) can exhaust a
-  managed MySQL host's connection limit.
-- The menu file upload route (`POST /api/management/restaurant/menu/upload`)
-  now writes to **Vercel Blob** instead of the local disk when running on
-  Vercel, because Vercel's filesystem is read-only/ephemeral in production.
-  Locally/Docker it still writes to `public/uploads` as before.
-- `vercel.json` bundles the `public/` folder into the function explicitly
-  (`includeFiles`), since Vercel's dependency tracer only picks up files
-  reached via `require`/`import`, not ones read at runtime by
-  `express.static`.
+- The database engine changed from **MySQL to Postgres**. This was
+  necessary — Vercel doesn't offer MySQL natively, only Postgres (Neon,
+  Supabase), Redis, and NoSQL stores.
+- `server/db.js` now talks to Postgres (via the `pg` package) instead of
+  MySQL (`mysql2`). It includes a compatibility layer so the rest of the app
+  didn't need a full rewrite — you won't notice a difference day to day.
+- `database/schema.sql` is now written in Postgres syntax.
+- **This is a fresh start for your data.** Your existing Aiven MySQL data
+  (bookings, guests, staff accounts) does not carry over automatically —
+  Postgres and MySQL are different enough that a straight copy isn't
+  possible. You'll re-seed your manager account and rooms from scratch (see
+  below), the same as your very first setup.
+- File uploads (Vercel Blob) work exactly as before — no changes there.
 
-## You still need a MySQL database
+## Step 1 — Create your Postgres database on Vercel
 
-Vercel doesn't host databases. Pick one:
-- **PlanetScale**, **Aiven**, **Railway MySQL**, or any managed MySQL 8 host
-- A MySQL instance you run elsewhere (a small VPS, etc.) that accepts
-  connections from the internet
+1. In your Vercel project → **Storage** tab → **Create Database**
+2. Choose **Postgres** (via Neon)
+3. Follow the prompts — Vercel automatically connects it to your project and
+   sets a `DATABASE_URL` (or `POSTGRES_URL`) environment variable for you.
+   You don't need to copy/paste any connection string yourself.
 
-Whichever you use, run the schema against it once, from your own machine,
-before or after the first deploy:
+## Step 2 — Load the schema
 
-```bash
-mysql -h <host> -u <user> -p < database/schema.sql
-cd server
-DATABASE_URL="mysql://user:pass@host:3306/dekyiba_hotel?sslmode=require" node seed.js
+You still need to run `database/schema.sql` once, the same way as before,
+just against Postgres instead of MySQL this time.
+
+**Easiest option — Neon's own web SQL editor:**
+1. In your Vercel project → Storage → your new Postgres database → there's
+   a link through to the Neon dashboard
+2. Open its **SQL Editor**
+3. Paste in the entire contents of `database/schema.sql` and run it
+
+**Or from your computer**, if you have `psql` installed:
+```
+psql "your-connection-string-from-vercel" -f database/schema.sql
 ```
 
-(`seed.js` creates the default manager account — username `kipsta`, password
-from `ADMIN_DEFAULT_PASSWORD` or the default in `.env.example`.)
+**Or with a free GUI tool** like pgAdmin or TablePlus — same idea as
+HeidiSQL, just for Postgres: connect using the connection string from
+Vercel, open `schema.sql`, run it.
 
-## Set up Vercel Blob (for menu file uploads)
+Just like before: only run this ONCE, on a fresh/empty database. Running it
+again later will wipe everything.
 
-In your Vercel project: **Storage → Create Database → Blob**. This sets the
-`BLOB_READ_WRITE_TOKEN` environment variable for you automatically — no
-manual copying needed as long as it's connected to the same project.
+## Step 3 — Create your manager login
 
-## Environment variables (Vercel → Settings → Environment Variables)
+From your computer, in the `server` folder:
+```
+$env:DATABASE_URL="your-connection-string-from-vercel"
+node seed.js
+```
+This creates the `kipsta` manager account, same as before.
+
+## Step 4 — Set up Vercel Blob (file uploads)
+
+Same as before: Storage → Create Database → Blob. No manual token copying
+needed.
+
+## Step 5 — Environment variables
+
+Vercel already set `DATABASE_URL` automatically in Step 1. Just add:
 
 | Variable | Value |
 |---|---|
-| `DATABASE_URL` | e.g. `mysql://user:pass@host:3306/dekyiba_hotel?sslmode=require` |
 | `JWT_SECRET` | a long random string |
 | `ADMIN_DEFAULT_PASSWORD` | only needed when you run `seed.js` |
-| `DB_CONNECTION_LIMIT` | optional, defaults to `1` on Vercel |
 
-You do **not** need to set `BLOB_READ_WRITE_TOKEN` yourself if you provisioned
-Blob storage through the Vercel dashboard for this project — it's injected
-automatically.
+## Step 6 — Deploy
 
-## Deploy
+Push your updated code to GitHub as usual — Vercel redeploys automatically.
 
-```bash
-npm i -g vercel     # if you don't have it
-vercel               # first deploy, follow the prompts
-vercel --prod        # promote to production
-```
+## A note on Docker / local MySQL
 
-Or connect the GitHub repo in the Vercel dashboard for automatic deploys on
-push.
+The `Dockerfile` and `docker-compose.yml` in this project still describe
+the *old* MySQL setup. They're left in place in case you ever want to run a
+local copy for testing, but they're no longer part of the Vercel deployment
+path and won't be kept in sync with the Postgres schema going forward. If
+you want a Postgres-based local dev setup too, just ask.
 
-## Known limitations on Vercel
+## Known limitations (unchanged from before)
 
-- **Login rate limiting** (`express-rate-limit`) keeps its counts in memory.
-  On Vercel that memory resets on cold starts and isn't shared across
-  concurrent instances, so the limit is best-effort rather than a hard cap.
-  If you need a real global limit, back it with Upstash Redis or similar —
-  ask me if you want that wired in.
-- **Cold starts**: the first request after inactivity will be slower while
-  the function boots and opens a DB connection.
-- Everything else (bookings, JWT auth, staff/admin dashboard, CSV export,
-  etc.) works the same as the Docker version.
+- Login rate limiting is best-effort across cold starts (in-memory, per
+  serverless instance) — same as before.
+- Cold starts: first request after inactivity is a bit slower.

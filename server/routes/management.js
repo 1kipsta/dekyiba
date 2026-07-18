@@ -11,7 +11,6 @@ const router = express.Router();
 let columnsMigrated = false;
 
 async function ensureTables() {
-  // 1. Hotel Settings Table
   await pool.query(`
     CREATE TABLE IF NOT EXISTS hotel_settings (
       setting_key VARCHAR(80) PRIMARY KEY,
@@ -20,45 +19,29 @@ async function ensureTables() {
     )
   `);
 
-  // 2. Restaurant Menu Items Table (Fixed for Postgres)
   await pool.query(`
     CREATE TABLE IF NOT EXISTS restaurant_menu_items (
-      menu_item_id SERIAL PRIMARY KEY,            -- SERIAL means auto-increment in Postgres
+      menu_item_id SERIAL PRIMARY KEY,
       name VARCHAR(120) NOT NULL,
       category VARCHAR(80) NOT NULL DEFAULT 'General',
-      department VARCHAR(50) NOT NULL DEFAULT 'restaurant', -- Clean text column instead of ENUM
+      department TEXT NOT NULL DEFAULT 'restaurant' CHECK (department IN ('restaurant','bar')),
       price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
       description TEXT,
       image_url VARCHAR(255) DEFAULT NULL,
-      is_active SMALLINT NOT NULL DEFAULT 1,       -- SMALLINT replaces TINYINT
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-}
-
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS restaurant_menu_items (
-      menu_item_id INT AUTO_INCREMENT PRIMARY KEY,
-      name VARCHAR(120) NOT NULL,
-      category VARCHAR(80) NOT NULL DEFAULT 'General',
-      department ENUM('restaurant','bar') NOT NULL DEFAULT 'restaurant',
-      price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-      description TEXT,
-      image_url VARCHAR(255) DEFAULT NULL,
-      is_active TINYINT(1) NOT NULL DEFAULT 1,
+      is_active BOOLEAN NOT NULL DEFAULT true,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS restaurant_sales (
-      sale_id INT AUTO_INCREMENT PRIMARY KEY,
+      sale_id SERIAL PRIMARY KEY,
       item_name VARCHAR(120) NOT NULL,
       category VARCHAR(80) NOT NULL DEFAULT 'General',
-      quantity TINYINT UNSIGNED NOT NULL DEFAULT 1,
+      quantity SMALLINT NOT NULL DEFAULT 1,
       unit_price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
       total_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-      status ENUM('pending','delivered','paid','cancelled') NOT NULL DEFAULT 'pending',
+      status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','delivered','paid','cancelled')),
       notes TEXT,
       sold_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
@@ -66,13 +49,13 @@ async function ensureTables() {
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS bar_orders (
-      order_id INT AUTO_INCREMENT PRIMARY KEY,
+      order_id SERIAL PRIMARY KEY,
       guest_name VARCHAR(120) NOT NULL,
       item_name VARCHAR(120) NOT NULL,
-      quantity TINYINT UNSIGNED NOT NULL DEFAULT 1,
+      quantity SMALLINT NOT NULL DEFAULT 1,
       unit_price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
       total_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-      status ENUM('pending','served','paid','cancelled') NOT NULL DEFAULT 'pending',
+      status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','served','paid','cancelled')),
       notes TEXT,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
@@ -82,9 +65,13 @@ async function ensureTables() {
   // existed — CREATE TABLE IF NOT EXISTS above won't add it to an existing table.
   if (!columnsMigrated) {
     columnsMigrated = true;
-    const [cols] = await pool.query(`SHOW COLUMNS FROM restaurant_menu_items LIKE 'department'`);
+    const [cols] = await pool.query(
+      `SELECT column_name FROM information_schema.columns WHERE table_name = 'restaurant_menu_items' AND column_name = 'department'`
+    );
     if (cols.length === 0) {
-      await pool.query(`ALTER TABLE restaurant_menu_items ADD COLUMN department ENUM('restaurant','bar') NOT NULL DEFAULT 'restaurant' AFTER category`);
+      await pool.query(
+        `ALTER TABLE restaurant_menu_items ADD COLUMN department TEXT NOT NULL DEFAULT 'restaurant' CHECK (department IN ('restaurant','bar'))`
+      );
     }
   }
 }
@@ -118,13 +105,13 @@ router.post('/admins', requireAuth, requireManager, async (req, res) => {
 
     const hash = await bcrypt.hash(password, 10);
     const [result] = await pool.query(
-      'INSERT INTO admins (username, password_hash, full_name, role) VALUES (?, ?, ?, ?)',
+      'INSERT INTO admins (username, password_hash, full_name, role) VALUES (?, ?, ?, ?) RETURNING admin_id',
       [username, hash, full_name, role || 'employee']
     );
     res.status(201).json({ admin_id: result.insertId, username, full_name, role: role || 'employee' });
   } catch (err) {
     console.error(err);
-    if (err.code === 'ER_DUP_ENTRY') {
+    if (err.code === '23505') {
       return res.status(409).json({ error: 'An account with that username already exists.' });
     }
     res.status(500).json({ error: 'Could not create employee account.' });
@@ -195,7 +182,7 @@ router.post('/settings', requireAuth, requireManager, async (req, res) => {
     });
 
     await Promise.all(entries.map(([key, value]) => pool.query(
-      'INSERT INTO hotel_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)',
+      'INSERT INTO hotel_settings (setting_key, setting_value) VALUES (?, ?) ON CONFLICT (setting_key) DO UPDATE SET setting_value = EXCLUDED.setting_value, updated_at = CURRENT_TIMESTAMP',
       [key, String(value)]
     )));
 
@@ -228,8 +215,8 @@ router.post('/restaurant/menu', requireAuth, requireManager, async (req, res) =>
     if (!name || !price) return res.status(400).json({ error: 'Name and price are required.' });
 
     const [result] = await pool.query(
-      'INSERT INTO restaurant_menu_items (name, category, department, price, description, image_url, is_active) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [name, category || 'General', department, price, description || null, image_url || null, is_active === false ? 0 : 1]
+      'INSERT INTO restaurant_menu_items (name, category, department, price, description, image_url, is_active) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING menu_item_id',
+      [name, category || 'General', department, price, description || null, image_url || null, is_active === false ? false : true]
     );
     res.status(201).json({ menu_item_id: result.insertId });
   } catch (err) {
@@ -331,7 +318,7 @@ router.post('/restaurant/sales', requireAuth, async (req, res) => {
     const total = Number(quantity || 1) * Number(unit_price || 0);
 
     const [result] = await pool.query(
-      'INSERT INTO restaurant_sales (item_name, category, quantity, unit_price, total_amount, status, notes) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO restaurant_sales (item_name, category, quantity, unit_price, total_amount, status, notes) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING sale_id',
       [item_name, category || 'General', quantity || 1, unit_price || 0, total, status || 'delivered', notes || null]
     );
     res.status(201).json({ sale_id: result.insertId });
@@ -372,7 +359,7 @@ router.post('/bar/orders', requireAuth, async (req, res) => {
 
     const total = Number(quantity || 1) * Number(unit_price || 0);
     const [result] = await pool.query(
-      'INSERT INTO bar_orders (guest_name, item_name, quantity, unit_price, total_amount, status, notes) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO bar_orders (guest_name, item_name, quantity, unit_price, total_amount, status, notes) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING order_id',
       [guest_name, item_name, quantity || 1, unit_price, total, status || 'pending', notes || null]
     );
     res.status(201).json({ order_id: result.insertId });
@@ -478,7 +465,7 @@ router.get('/reports/export', requireAuth, requireManager, async (req, res) => {
     const [bookingRows] = await pool.query(
       `SELECT CONCAT('Room ', r.room_number, ' (', r.room_type, ')') AS item,
               g.full_name AS category,
-              DATEDIFF(b.check_out, b.check_in) AS quantity,
+              (b.check_out - b.check_in) AS quantity,
               b.total_amount AS amount,
               b.status AS status,
               b.created_at AS date
