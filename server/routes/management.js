@@ -285,7 +285,7 @@ router.post('/restaurant/menu/upload', requireAuth, requireManager, async (req, 
     if (process.env.VERCEL) {
       const { put } = require('@vercel/blob');
       const blob = await put(`uploads/${fileName}`, buffer, {
-        access: 'private',
+        access: 'public',
         contentType: mime_type || (fileExt === '.pdf' ? 'application/pdf' : 'image/png')
       });
       return res.json({ success: true, file_url: blob.url, file_name: fileName });
