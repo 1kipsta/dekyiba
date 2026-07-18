@@ -11,13 +11,30 @@ const router = express.Router();
 let columnsMigrated = false;
 
 async function ensureTables() {
+  // 1. Hotel Settings Table
   await pool.query(`
     CREATE TABLE IF NOT EXISTS hotel_settings (
       setting_key VARCHAR(80) PRIMARY KEY,
       setting_value TEXT NOT NULL,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `);
+
+  // 2. Restaurant Menu Items Table (Fixed for Postgres)
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS restaurant_menu_items (
+      menu_item_id SERIAL PRIMARY KEY,            -- SERIAL means auto-increment in Postgres
+      name VARCHAR(120) NOT NULL,
+      category VARCHAR(80) NOT NULL DEFAULT 'General',
+      department VARCHAR(50) NOT NULL DEFAULT 'restaurant', -- Clean text column instead of ENUM
+      price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+      description TEXT,
+      image_url VARCHAR(255) DEFAULT NULL,
+      is_active SMALLINT NOT NULL DEFAULT 1,       -- SMALLINT replaces TINYINT
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+}
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS restaurant_menu_items (
@@ -111,6 +128,37 @@ router.post('/admins', requireAuth, requireManager, async (req, res) => {
       return res.status(409).json({ error: 'An account with that username already exists.' });
     }
     res.status(500).json({ error: 'Could not create employee account.' });
+  }
+});
+
+router.delete('/admins/:id', requireAuth, requireManager, async (req, res) => {
+  try {
+    await ensureTables();
+    const targetId = Number(req.params.id);
+
+    if (targetId === req.admin.admin_id) {
+      return res.status(400).json({ error: 'You cannot delete your own account while signed in.' });
+    }
+
+    const [[target]] = await pool.query('SELECT admin_id, role FROM admins WHERE admin_id = ?', [targetId]);
+    if (!target) {
+      return res.status(404).json({ error: 'Account not found.' });
+    }
+
+    if (target.role === 'manager') {
+      const [[{ managerCount }]] = await pool.query(
+        "SELECT COUNT(*) AS managerCount FROM admins WHERE role = 'manager'"
+      );
+      if (managerCount <= 1) {
+        return res.status(400).json({ error: 'Cannot delete the only remaining manager account.' });
+      }
+    }
+
+    await pool.query('DELETE FROM admins WHERE admin_id = ?', [targetId]);
+    res.json({ message: 'Account deleted.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Could not delete employee account.' });
   }
 });
 
@@ -269,7 +317,10 @@ router.post('/restaurant/menu/upload', requireAuth, requireManager, async (req, 
     res.json({ success: true, file_url: relativePath, file_name: fileName });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Could not upload menu file.' });
+    const hint = process.env.VERCEL && !process.env.BLOB_READ_WRITE_TOKEN
+      ? 'No Blob store is connected to this project yet — add one from Vercel → Storage → Create Database → Blob.'
+      : err.message;
+    res.status(500).json({ error: `Could not upload menu file. ${hint}` });
   }
 });
 
@@ -364,11 +415,11 @@ router.get('/reports/today', requireAuth, async (req, res) => {
     await ensureTables();
     const { since } = resolveReportWindow({ range: 'today' });
     const [restaurantRows] = await pool.query(
-      'SELECT COALESCE(SUM(total_amount),0) AS sales, COUNT(*) AS items, SUM(CASE WHEN status = "delivered" THEN 1 ELSE 0 END) AS delivered FROM restaurant_sales WHERE sold_at >= ?',
+      'SELECT COALESCE(SUM(total_amount),0) AS sales, COUNT(*) AS items, SUM(CASE WHEN status = \'delivered\' THEN 1 ELSE 0 END) AS delivered FROM restaurant_sales WHERE sold_at >= ?',
       [since]
     );
     const [barRows] = await pool.query(
-      'SELECT COALESCE(SUM(total_amount),0) AS sales, COUNT(*) AS items, SUM(CASE WHEN status = "served" OR status = "paid" THEN 1 ELSE 0 END) AS delivered FROM bar_orders WHERE created_at >= ?',
+      'SELECT COALESCE(SUM(total_amount),0) AS sales, COUNT(*) AS items, SUM(CASE WHEN status = \'served\' OR status = \'paid\' THEN 1 ELSE 0 END) AS delivered FROM bar_orders WHERE created_at >= ?',
       [since]
     );
 
@@ -393,9 +444,9 @@ router.get('/reports/summary', requireAuth, requireManager, async (req, res) => 
   try {
     await ensureTables();
     const { since, until, label } = resolveReportWindow(req.query);
-    const [restaurantRows] = await pool.query('SELECT SUM(total_amount) AS total_sales, COUNT(*) AS total_items, SUM(CASE WHEN status = "delivered" THEN 1 ELSE 0 END) AS delivered_items FROM restaurant_sales WHERE sold_at >= ? AND sold_at < ?', [since, until]);
-    const [barRows] = await pool.query('SELECT SUM(total_amount) AS total_sales, COUNT(*) AS total_items, SUM(CASE WHEN status = "served" OR status = "paid" THEN 1 ELSE 0 END) AS delivered_items FROM bar_orders WHERE created_at >= ? AND created_at < ?', [since, until]);
-    const [bookingRows] = await pool.query('SELECT SUM(total_amount) AS room_revenue, COUNT(*) AS room_bookings FROM bookings WHERE created_at >= ? AND created_at < ? AND status IN ("confirmed", "checked_in", "checked_out")', [since, until]);
+    const [restaurantRows] = await pool.query('SELECT SUM(total_amount) AS total_sales, COUNT(*) AS total_items, SUM(CASE WHEN status = \'delivered\' THEN 1 ELSE 0 END) AS delivered_items FROM restaurant_sales WHERE sold_at >= ? AND sold_at < ?', [since, until]);
+    const [barRows] = await pool.query('SELECT SUM(total_amount) AS total_sales, COUNT(*) AS total_items, SUM(CASE WHEN status = \'served\' OR status = \'paid\' THEN 1 ELSE 0 END) AS delivered_items FROM bar_orders WHERE created_at >= ? AND created_at < ?', [since, until]);
+    const [bookingRows] = await pool.query('SELECT SUM(total_amount) AS room_revenue, COUNT(*) AS room_bookings FROM bookings WHERE created_at >= ? AND created_at < ? AND status IN (\'confirmed\', \'checked_in\', \'checked_out\')', [since, until]);
 
     const restaurant = restaurantRows[0] || {};
     const bar = barRows[0] || {};
@@ -424,11 +475,26 @@ router.get('/reports/export', requireAuth, requireManager, async (req, res) => {
     const { since, until, label } = resolveReportWindow(req.query);
     const [restaurantRows] = await pool.query('SELECT item_name AS item, category, quantity, total_amount AS amount, status, sold_at AS date FROM restaurant_sales WHERE sold_at >= ? AND sold_at < ? ORDER BY sold_at DESC', [since, until]);
     const [barRows] = await pool.query('SELECT item_name AS item, guest_name AS category, quantity, total_amount AS amount, status, created_at AS date FROM bar_orders WHERE created_at >= ? AND created_at < ? ORDER BY created_at DESC', [since, until]);
+    const [bookingRows] = await pool.query(
+      `SELECT CONCAT('Room ', r.room_number, ' (', r.room_type, ')') AS item,
+              g.full_name AS category,
+              DATEDIFF(b.check_out, b.check_in) AS quantity,
+              b.total_amount AS amount,
+              b.status AS status,
+              b.created_at AS date
+       FROM bookings b
+       JOIN guests g ON b.guest_id = g.guest_id
+       JOIN rooms r ON b.room_id = r.room_id
+       WHERE b.created_at >= ? AND b.created_at < ?
+       ORDER BY b.created_at DESC`,
+      [since, until]
+    );
 
     const rows = [
       ['type', 'item', 'category', 'quantity', 'amount', 'status', 'date'],
       ...restaurantRows.map((row) => ['restaurant', row.item, row.category, row.quantity, row.amount, row.status, row.date]),
-      ...barRows.map((row) => ['bar', row.item, row.category, row.quantity, row.amount, row.status, row.date])
+      ...barRows.map((row) => ['bar', row.item, row.category, row.quantity, row.amount, row.status, row.date]),
+      ...bookingRows.map((row) => ['room_booking', row.item, row.category, row.quantity, row.amount, row.status, row.date])
     ];
 
     // Quote every field and defuse spreadsheet formula injection (values starting
